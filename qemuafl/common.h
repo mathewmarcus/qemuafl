@@ -100,6 +100,7 @@ extern unsigned int    afl_inst_rms;
 extern abi_ulong       afl_entry_point, afl_start_code, afl_end_code;
 extern abi_ulong       afl_persistent_addr;
 extern abi_ulong       afl_persistent_ret_addr;
+extern abi_ulong       afl_persistent_getenv_addr;
 extern u8              afl_compcov_level;
 extern unsigned char   afl_fork_child;
 extern unsigned int    afl_forksrv_pid;
@@ -128,6 +129,7 @@ void afl_setup(void);
 void afl_forkserver(CPUState *cpu);
 void afl_persistent_iter(CPUArchState *env);
 void afl_persistent_loop(CPUArchState *env);
+void afl_getenv(CPUArchState *env);
 
 // void afl_debug_dump_saved_regs(void);
 
@@ -146,9 +148,13 @@ abi_ulong afl_set_brk(abi_ulong new_brk);
 #if defined(TARGET_X86_64) || defined(TARGET_I386) || defined(TARGET_AARCH64) || defined(TARGET_ARM) || defined(TARGET_MIPS) || defined(TARGET_MIPS64) || defined(TARGET_PPC)
 void afl_save_regs(struct api_regs* regs, CPUArchState* env);
 void afl_restore_regs(struct api_regs* regs, CPUArchState* env);
+abi_ptr afl_get_arg0(CPUArchState* env);
+void afl_setenv(CPUArchState* env, abi_ptr env_val_addr);
 #else
 static void afl_save_regs(struct api_regs* regs, CPUArchState* env) {}
 static void afl_restore_regs(struct api_regs* regs, CPUArchState* env) {}
+static abi_ptr afl_get_arg0(CPUArchState* env) {}
+static void afl_setenv(CPUArchState* env, abi_ptr env_val_addr) {}
 #endif
 
 void afl_target_unmap_trackeds(void);

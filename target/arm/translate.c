@@ -226,6 +226,27 @@ void afl_restore_regs(struct api_regs* r, CPUArchState* env) {
 
 }
 
+abi_ptr afl_get_arg0(CPUArchState* env) {
+#ifdef TARGET_AARCH64
+  return env->xregs[0];
+#else
+  return env->regs[0];
+#endif
+}
+
+
+void afl_setenv(CPUArchState* env, abi_ptr env_val_addr) {
+#ifdef TARGET_AARCH64
+  env->xregs[0] = env_val_addr;
+  env->xregs[15] = env->pc = env->xregs[14];
+#else
+  env->regs[0] = env_val_addr;
+  env->regs[15] = env->pc = env->regs[14] - 1;
+  env->thumb = 1;
+#endif
+
+}
+
 
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)
 #define ENABLE_ARCH_5     arm_dc_feature(s, ARM_FEATURE_V5)

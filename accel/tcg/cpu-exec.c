@@ -72,7 +72,7 @@ abi_ulong afl_entry_point,                      /* ELF entry point (_start) */
 
 struct vmrange* afl_instr_code;
 
-abi_ulong    afl_persistent_addr, afl_persistent_ret_addr;
+abi_ulong    afl_persistent_addr, afl_persistent_ret_addr, afl_persistent_getenv_addr = 0;
 unsigned int afl_persistent_cnt;
 
 u8 afl_compcov_level;
@@ -600,6 +600,10 @@ void afl_setup(void) {
     
   if (getenv("AFL_QEMU_PERSISTENT_EXITS")) persistent_exits = 1;
 
+  if (getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"))
+    afl_persistent_getenv_addr =
+        strtoll(getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"), NULL, 0);
+
   // TODO persistent exits for other archs not x86
   // TODO persistent mode for other archs not x86
   // TODO cmplog rtn for arm
@@ -836,6 +840,20 @@ void afl_persistent_iter(CPUArchState *env) {
 
   }
 
+}
+
+void afl_getenv(CPUArchState *env) {
+  abi_ptr env_key;
+  //char *env_val = "hello=world;foo=bar";
+  //abi_ulong max = GUEST_ADDR_MAX;
+
+  env_key = afl_get_arg0(env);
+  if (!strcmp(AFL_G2H(env_key), "HTTP_COOKIE")) {
+    //afl_setenv(env, h2g(env_val));
+    //afl_setenv(env, 0x8498);
+    afl_setenv(env, 0x8480);
+    cpu_loop_exit_restore(env_cpu(env), GETPC());
+  }
 }
 
 void afl_persistent_loop(CPUArchState *env) {
