@@ -236,13 +236,30 @@ abi_ptr afl_get_arg0(CPUArchState* env) {
 
 
 void afl_setenv(CPUArchState* env, abi_ptr env_val_addr) {
+  abi_ulong ret;
+
 #ifdef TARGET_AARCH64
   env->xregs[0] = env_val_addr;
-  env->xregs[15] = env->pc = env->xregs[14];
+  if (env->xregs[14] % 2) {
+    env->thumb = 1;
+    ret = env->xregs[14] - 1;
+  }
+  else {
+    env->thumb = 0;
+    ret = env->xregs[14];
+  }
+  env->xregs[15] = env->pc = ret;
 #else
   env->regs[0] = env_val_addr;
-  env->regs[15] = env->pc = env->regs[14] - 1;
-  env->thumb = 1;
+  if (env->regs[14] % 2) {
+    env->thumb = 1;
+    ret = env->regs[14] - 1;
+  }
+  else {
+    env->thumb = 0;
+    ret = env->regs[14];
+  }
+  env->regs[15] = env->pc = ret;
 #endif
 
 }
