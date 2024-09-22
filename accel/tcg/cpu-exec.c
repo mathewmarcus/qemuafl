@@ -72,7 +72,7 @@ abi_ulong afl_entry_point,                      /* ELF entry point (_start) */
 
 struct vmrange* afl_instr_code;
 
-abi_ulong    afl_persistent_addr, afl_persistent_ret_addr, afl_persistent_getenv_addr = 0;
+abi_ulong    afl_persistent_addr, afl_persistent_ret_addr, afl_persistent_getenv_addr = 0, afl_persistent_environ;
 unsigned int afl_persistent_cnt;
 
 u8 afl_compcov_level;
@@ -600,9 +600,13 @@ void afl_setup(void) {
     
   if (getenv("AFL_QEMU_PERSISTENT_EXITS")) persistent_exits = 1;
 
-  if (getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"))
+  if (getenv("AF_QEMU_PERSISTENT_GETENV_ADDR")) {
     afl_persistent_getenv_addr =
         strtoll(getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"), NULL, 0);
+    
+    // TODO: remove this
+    afl_init_persistent_environ();
+  }
 
   // TODO persistent exits for other archs not x86
   // TODO persistent mode for other archs not x86
@@ -844,14 +848,15 @@ void afl_persistent_iter(CPUArchState *env) {
 
 void afl_getenv(CPUArchState *env) {
   abi_ptr env_key;
-  //char *env_val = "hello=world;foo=bar";
   //abi_ulong max = GUEST_ADDR_MAX;
 
   env_key = afl_get_arg0(env);
   if (!strcmp(AFL_G2H(env_key), "HTTP_COOKIE")) {
+    strcpy(AFL_G2H(afl_persistent_environ), "hello=world;foo=bar");
     //afl_setenv(env, h2g(env_val));
     //afl_setenv(env, 0x8498);
-    afl_setenv(env, 0x8480);
+    //afl_setenv(env, 0x8480);
+    afl_setenv(env, afl_persistent_environ);
     cpu_loop_exit_restore(env_cpu(env), GETPC());
   }
 }
@@ -873,6 +878,7 @@ void afl_persistent_loop(CPUArchState *env) {
       afl_area_ptr[0] = 1;
       afl_prev_loc = 0;
 
+      if (afl_persistent_getenv_addr) afl_init_persistent_environ();
     }
     
     if (persistent_memory) collect_memory_snapshot();

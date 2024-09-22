@@ -101,6 +101,7 @@ extern abi_ulong       afl_entry_point, afl_start_code, afl_end_code;
 extern abi_ulong       afl_persistent_addr;
 extern abi_ulong       afl_persistent_ret_addr;
 extern abi_ulong       afl_persistent_getenv_addr;
+extern abi_ulong       afl_persistent_environ;
 extern u8              afl_compcov_level;
 extern unsigned char   afl_fork_child;
 extern unsigned int    afl_forksrv_pid;
@@ -130,6 +131,7 @@ void afl_forkserver(CPUState *cpu);
 void afl_persistent_iter(CPUArchState *env);
 void afl_persistent_loop(CPUArchState *env);
 void afl_getenv(CPUArchState *env);
+void afl_init_persistent_environ(void);
 
 // void afl_debug_dump_saved_regs(void);
 
