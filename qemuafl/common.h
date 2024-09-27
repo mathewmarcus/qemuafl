@@ -101,7 +101,6 @@ extern abi_ulong       afl_entry_point, afl_start_code, afl_end_code;
 extern abi_ulong       afl_persistent_addr;
 extern abi_ulong       afl_persistent_ret_addr;
 extern abi_ulong       afl_persistent_getenv_addr;
-extern abi_ulong       afl_persistent_environ;
 extern u8              afl_compcov_level;
 extern unsigned char   afl_fork_child;
 extern unsigned int    afl_forksrv_pid;
@@ -132,6 +131,7 @@ void afl_persistent_iter(CPUArchState *env);
 void afl_persistent_loop(CPUArchState *env);
 void afl_getenv(CPUArchState *env);
 void afl_init_persistent_environ(void);
+void afl_persistent_setenv(char *name, char *value);
 
 // void afl_debug_dump_saved_regs(void);
 
@@ -143,6 +143,21 @@ void afl_float_compcov_log_64(target_ulong cur_loc, float64 arg1, float64 arg2,
                               void *status);
 void afl_float_compcov_log_80(target_ulong cur_loc, floatx80 arg1,
                               floatx80 arg2);
+
+/* env var fuzzing decls: */
+struct afl_persistent_env_var {
+  char* name;
+  char* value;
+  QSLIST_ENTRY(afl_persistent_env_var) link;
+};
+
+struct afl_persistent_environ {
+  abi_ulong environ;
+  uint8_t* mem_ptr;
+  QSLIST_HEAD(, afl_persistent_env_var) vars;
+};
+
+extern struct afl_persistent_environ afl_persistent_env;
 
 abi_ulong afl_get_brk(void);
 abi_ulong afl_set_brk(abi_ulong new_brk);

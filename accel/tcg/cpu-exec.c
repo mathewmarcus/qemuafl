@@ -72,7 +72,7 @@ abi_ulong afl_entry_point,                      /* ELF entry point (_start) */
 
 struct vmrange* afl_instr_code;
 
-abi_ulong    afl_persistent_addr, afl_persistent_ret_addr, afl_persistent_getenv_addr = 0, afl_persistent_environ;
+abi_ulong    afl_persistent_addr, afl_persistent_ret_addr, afl_persistent_getenv_addr = 0;
 unsigned int afl_persistent_cnt;
 
 u8 afl_compcov_level;
@@ -148,6 +148,8 @@ static inline TranslationBlock *tb_find(CPUState *, TranslationBlock *, int,
 static inline void              tb_add_jump(TranslationBlock *tb, int n,
                                             TranslationBlock *tb_next);
 static void                     afl_map_shm_fuzz(void);
+
+struct afl_persistent_environ afl_persistent_env = { 0 };
 
 /*************************
  * ACTUAL IMPLEMENTATION *
@@ -819,6 +821,7 @@ void afl_persistent_iter(CPUArchState *env) {
       }
     
     }
+    if (afl_persistent_getenv_addr) afl_persistent_environ_reset();
 
     // TODO use only pipe
     raise(SIGSTOP);
@@ -848,17 +851,46 @@ void afl_persistent_iter(CPUArchState *env) {
 
 void afl_getenv(CPUArchState *env) {
   abi_ptr env_key;
-  //abi_ulong max = GUEST_ADDR_MAX;
+  struct afl_persistent_env_var *env_var;
+
+  // TODO: remove
+  afl_persistent_environ_reset();
+  afl_persistent_setenv("HTTP_COOKIE", "hello=world;foo=bar");
+  afl_persistent_setenv("HTTP_FOO", "BAR");
 
   env_key = afl_get_arg0(env);
-  if (!strcmp(AFL_G2H(env_key), "HTTP_COOKIE")) {
-    strcpy(AFL_G2H(afl_persistent_environ), "hello=world;foo=bar");
-    //afl_setenv(env, h2g(env_val));
-    //afl_setenv(env, 0x8498);
-    //afl_setenv(env, 0x8480);
-    afl_setenv(env, afl_persistent_environ);
-    cpu_loop_exit_restore(env_cpu(env), GETPC());
+  QSLIST_FOREACH(env_var, &(afl_persistent_env.vars), link) {
+    if (!strcmp(AFL_G2H(env_key), AFL_G2H(env_var->name))) {
+      afl_setenv(env, (abi_ptr) env_var->value);
+      cpu_loop_exit_restore(env_cpu(env), GETPC());
+    }
   }
+}
+
+void afl_persistent_environ_reset() {
+  afl_persistent_env.mem_ptr = (uint8_t *) afl_persistent_env.environ;
+
+  struct afl_persistent_env_var *env_var;
+  while((env_var = QSLIST_FIRST(&(afl_persistent_env.vars)))) {
+    QSLIST_REMOVE_HEAD(&(afl_persistent_env.vars), link);
+    free(env_var);
+  }
+}
+
+void afl_persistent_setenv(char *name, char *value) {
+  struct afl_persistent_env_var *env_var;
+
+  env_var = malloc(sizeof(struct afl_persistent_env_var));
+
+  strcpy(AFL_G2H(afl_persistent_env.mem_ptr), name);
+  env_var->name = afl_persistent_env.mem_ptr;
+  afl_persistent_env.mem_ptr += strlen(name) + 1;
+
+  strcpy(AFL_G2H(afl_persistent_env.mem_ptr), value);
+  env_var->value = afl_persistent_env.mem_ptr;
+  afl_persistent_env.mem_ptr += strlen(value) + 1;
+
+  QSLIST_INSERT_HEAD(&(afl_persistent_env.vars), env_var, link);
 }
 
 void afl_persistent_loop(CPUArchState *env) {

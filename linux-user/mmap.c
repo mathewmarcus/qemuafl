@@ -891,7 +891,7 @@ void afl_target_unmap_trackeds(void) {
 }
 
 void afl_init_persistent_environ(void) {
-    afl_persistent_environ = target_mmap(
+    afl_persistent_env.environ = target_mmap(
         0,
         AFL_PERSISENT_ENVIRON_SIZE,
         PROT_READ | PROT_WRITE,
@@ -899,4 +899,5 @@ void afl_init_persistent_environ(void) {
         -1,
         0
     );
+    afl_persistent_env.mem_ptr = (uint8_t *) afl_persistent_env.environ;
 }
