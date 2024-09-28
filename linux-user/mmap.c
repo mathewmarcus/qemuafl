@@ -899,5 +899,5 @@ void afl_init_persistent_environ(void) {
         -1,
         0
     );
-    afl_persistent_env.mem_ptr = (uint8_t *) afl_persistent_env.environ;
+    afl_persistent_env.mem_ptr = afl_persistent_env.environ;
 }

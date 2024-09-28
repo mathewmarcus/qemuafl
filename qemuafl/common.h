@@ -131,7 +131,6 @@ void afl_persistent_iter(CPUArchState *env);
 void afl_persistent_loop(CPUArchState *env);
 void afl_getenv(CPUArchState *env);
 void afl_init_persistent_environ(void);
-void afl_persistent_setenv(char *name, char *value);
 
 // void afl_debug_dump_saved_regs(void);
 
@@ -146,14 +145,14 @@ void afl_float_compcov_log_80(target_ulong cur_loc, floatx80 arg1,
 
 /* env var fuzzing decls: */
 struct afl_persistent_env_var {
-  char* name;
-  char* value;
+  abi_ptr name;
+  abi_ptr value;
   QSLIST_ENTRY(afl_persistent_env_var) link;
 };
 
 struct afl_persistent_environ {
-  abi_ulong environ;
-  uint8_t* mem_ptr;
+  abi_ptr environ;
+  abi_ptr mem_ptr;
   QSLIST_HEAD(, afl_persistent_env_var) vars;
 };
 

@@ -212,4 +212,7 @@ struct ppc_regs {
   uint32_t crf[8];       /* condition register */
 };
 
+
+void afl_persistent_setenv(const char *name, const char *value);
+
 #endif
