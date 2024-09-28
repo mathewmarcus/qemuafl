@@ -148,6 +148,7 @@ static inline TranslationBlock *tb_find(CPUState *, TranslationBlock *, int,
 static inline void              tb_add_jump(TranslationBlock *tb, int n,
                                             TranslationBlock *tb_next);
 static void                     afl_map_shm_fuzz(void);
+static void afl_persistent_environ_reset(void);
 
 struct afl_persistent_environ afl_persistent_env = { 0 };
 
@@ -861,14 +862,14 @@ void afl_getenv(CPUArchState *env) {
   env_key = afl_get_arg0(env);
   QSLIST_FOREACH(env_var, &(afl_persistent_env.vars), link) {
     if (!strcmp(AFL_G2H(env_key), AFL_G2H(env_var->name))) {
-      afl_setenv(env, (abi_ptr) env_var->value);
+      afl_setenv(env, env_var->value);
       cpu_loop_exit_restore(env_cpu(env), GETPC());
     }
   }
 }
 
-void afl_persistent_environ_reset() {
-  afl_persistent_env.mem_ptr = (uint8_t *) afl_persistent_env.environ;
+static void afl_persistent_environ_reset(void) {
+  afl_persistent_env.mem_ptr = afl_persistent_env.environ;
 
   struct afl_persistent_env_var *env_var;
   while((env_var = QSLIST_FIRST(&(afl_persistent_env.vars)))) {
@@ -877,7 +878,7 @@ void afl_persistent_environ_reset() {
   }
 }
 
-void afl_persistent_setenv(char *name, char *value) {
+void afl_persistent_setenv(const char *name, const char *value) {
   struct afl_persistent_env_var *env_var;
 
   env_var = malloc(sizeof(struct afl_persistent_env_var));
