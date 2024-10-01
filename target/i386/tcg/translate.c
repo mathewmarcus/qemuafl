@@ -148,6 +148,27 @@ void afl_restore_regs(struct api_regs* r, CPUArchState* env) {
 
 }
 
+abi_ptr afl_get_arg0(CPUArchState* env) {
+#ifdef TARGET_X86_64
+  return env->regs[R_EDI];
+#else
+  abi_ptr *arg0_ptr;
+
+  arg0_ptr = AFL_G2H(env->regs[R_ESP] + sizeof(abi_ptr));
+  return *arg0_ptr;
+#endif
+}
+
+void afl_setenv(CPUArchState* env, abi_ptr env_val_addr) {
+  abi_ptr *ret_addr_ptr;
+
+  ret_addr_ptr = AFL_G2H(env->regs[R_ESP]);
+
+  env->regs[R_EAX] = env_val_addr;
+  env->eip = *ret_addr_ptr;
+  env->regs[R_ESP] += sizeof(abi_ptr);
+}
+
 #define PREFIX_REPZ   0x01
 #define PREFIX_REPNZ  0x02
 #define PREFIX_LOCK   0x04
