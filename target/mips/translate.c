@@ -2417,6 +2417,25 @@ void afl_restore_regs(struct api_regs* r, CPUArchState *env) {
     }
 }
 
+abi_ptr afl_get_arg0(CPUArchState* env) {
+    return env->active_tc.gpr[4]; /* a0 */
+}
+
+/*
+    Based on mips_cpu_set_pc
+*/
+void afl_setenv(CPUArchState* env, abi_ptr env_val_addr) {
+  env->active_tc.gpr[2] = env_val_addr; /* v0 */
+  if (env->active_tc.gpr[31] % 2) {
+    env->hflags |= MIPS_HFLAG_M16;
+    env->active_tc.PC = env->active_tc.gpr[31] - 1;
+  }
+  else {
+    env->hflags &= ~(MIPS_HFLAG_M16);
+    env->active_tc.PC = env->active_tc.gpr[31];
+  }
+}
+
 /* General purpose registers moves. */
 void gen_load_gpr(TCGv t, int reg)
 {
