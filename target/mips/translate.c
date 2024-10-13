@@ -2426,6 +2426,11 @@ abi_ptr afl_get_arg0(CPUArchState* env) {
 */
 void afl_setenv(CPUArchState* env, abi_ptr env_val_addr) {
   env->active_tc.gpr[2] = env_val_addr; /* v0 */
+
+  /*
+    Do we need to first check if ISA supports this?
+    i.e. env->insn_flags & (ASE_MIPS16 | ASE_MICROMIPS)
+  */
   if (env->active_tc.gpr[31] % 2) {
     env->hflags |= MIPS_HFLAG_M16;
     env->active_tc.PC = env->active_tc.gpr[31] - 1;

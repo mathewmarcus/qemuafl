@@ -234,7 +234,9 @@ abi_ptr afl_get_arg0(CPUArchState* env) {
 #endif
 }
 
-
+/*
+    Based on arm_cpu_set_pc
+*/
 void afl_setenv(CPUArchState* env, abi_ptr env_val_addr) {
 #ifdef TARGET_AARCH64
   env->xregs[0] = env_val_addr;
