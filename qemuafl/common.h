@@ -78,6 +78,15 @@ struct generic_api_regs { int v; };
   #define INC_AFL_AREA(loc) afl_area_ptr[loc]++
 #endif
 
+/*
+    Set this equal to MAX_ARG_STRLEN, i.e. the maximum length of both
+    argv and envp, above which the E2BIG error is returned from execve.
+    This may be unnecessarily large, given that MAX_ARG_STRLEN is
+    designed to accomodate argv - in addition to envp.
+    https://github.com/torvalds/linux/blob/master/include/uapi/linux/binfmts.h#L15
+*/
+#define AFL_PERSISENT_ENVIRON_SIZE 32 * TARGET_PAGE_SIZE
+
 typedef void (*afl_persistent_hook_fn)(struct api_regs *regs,
                                        uint64_t guest_base,
                                        uint8_t *input_buf,

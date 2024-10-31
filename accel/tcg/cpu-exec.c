@@ -880,16 +880,27 @@ static void afl_persistent_environ_reset(void) {
 
 void afl_persistent_setenv(const char *name, const char *value) {
   struct afl_persistent_env_var *env_var;
+  size_t name_len, value_len;
+
+  name_len = strlen(name) + 1;
+  value_len = strlen(value) + 1;
+
+  if ((afl_persistent_env.mem_ptr + name_len + value_len) - afl_persistent_env.environ > AFL_PERSISENT_ENVIRON_SIZE) {
+    fprintf(stderr,
+            "[AFL] ERROR: exceeded maximum fuzzing env var memory size of %i",
+            AFL_PERSISENT_ENVIRON_SIZE);
+    exit(1);
+  }
 
   env_var = malloc(sizeof(struct afl_persistent_env_var));
 
   strcpy(AFL_G2H(afl_persistent_env.mem_ptr), name);
   env_var->name = afl_persistent_env.mem_ptr;
-  afl_persistent_env.mem_ptr += strlen(name) + 1;
+  afl_persistent_env.mem_ptr += name_len;
 
   strcpy(AFL_G2H(afl_persistent_env.mem_ptr), value);
   env_var->value = afl_persistent_env.mem_ptr;
-  afl_persistent_env.mem_ptr += strlen(value) + 1;
+  afl_persistent_env.mem_ptr += value_len;
 
   QSLIST_INSERT_HEAD(&(afl_persistent_env.vars), env_var, link);
 }
