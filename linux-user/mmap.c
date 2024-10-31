@@ -35,15 +35,6 @@ struct mmap_tree_node {
 #define MMAP_TREE_START(node) ((node)->start)
 #define MMAP_TREE_LAST(node) ((node)->end)
 
-/*
-    Set this equal to MAX_ARG_STRLEN, i.e. the maximum length of both
-    argv and envp, above which the E2BIG error is returned from execve.
-    This may be unnecessarily large, given that MAX_ARG_STRLEN is
-    designed to accomodate argv - in addition to envp.
-    https://github.com/torvalds/linux/blob/master/include/uapi/linux/binfmts.h#L15
-*/
-#define AFL_PERSISENT_ENVIRON_SIZE 32 * TARGET_PAGE_SIZE
-
 INTERVAL_TREE_DEFINE(struct mmap_tree_node, rb, abi_long, __subtree_last,
                      MMAP_TREE_START, MMAP_TREE_LAST, static, mmap_tree)
 
