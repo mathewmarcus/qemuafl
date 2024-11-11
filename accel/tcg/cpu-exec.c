@@ -606,9 +606,6 @@ void afl_setup(void) {
   if (getenv("AF_QEMU_PERSISTENT_GETENV_ADDR")) {
     afl_persistent_getenv_addr =
         strtoll(getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"), NULL, 0);
-    
-    // TODO: remove this
-    afl_init_persistent_environ();
   }
 
   // TODO persistent exits for other archs not x86
@@ -853,11 +850,6 @@ void afl_persistent_iter(CPUArchState *env) {
 void afl_getenv(CPUArchState *env) {
   abi_ptr env_key;
   struct afl_persistent_env_var *env_var;
-
-  // TODO: remove
-  afl_persistent_environ_reset();
-  afl_persistent_setenv("HTTP_COOKIE", "hello=world;foo=bar");
-  afl_persistent_setenv("HTTP_FOO", "BAR");
 
   env_key = afl_get_arg0(env);
   QSLIST_FOREACH(env_var, &(afl_persistent_env.vars), link) {
