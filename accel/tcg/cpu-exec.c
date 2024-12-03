@@ -572,6 +572,10 @@ void afl_setup(void) {
 
     }
 
+    if (getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"))
+      afl_persistent_getenv_addr =
+          strtoll(getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"), NULL, 0);
+
 #endif
 
   }
@@ -602,11 +606,6 @@ void afl_setup(void) {
     afl_persistent_cnt = 0;
     
   if (getenv("AFL_QEMU_PERSISTENT_EXITS")) persistent_exits = 1;
-
-  if (getenv("AF_QEMU_PERSISTENT_GETENV_ADDR")) {
-    afl_persistent_getenv_addr =
-        strtoll(getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"), NULL, 0);
-  }
 
   // TODO persistent exits for other archs not x86
   // TODO persistent mode for other archs not x86
@@ -819,7 +818,6 @@ void afl_persistent_iter(CPUArchState *env) {
       }
     
     }
-    if (afl_persistent_getenv_addr) afl_persistent_environ_reset();
 
     // TODO use only pipe
     raise(SIGSTOP);
@@ -827,6 +825,8 @@ void afl_persistent_iter(CPUArchState *env) {
     
     // now we have shared_buf updated and ready to use
     if (persistent_save_gpr && afl_persistent_hook_ptr) {
+      if (afl_persistent_getenv_addr)
+        afl_persistent_environ_reset();
     
       struct api_regs hook_regs = saved_regs;
       afl_persistent_hook_ptr(&hook_regs, guest_base, shared_buf,
@@ -913,8 +913,6 @@ void afl_persistent_loop(CPUArchState *env) {
       memset(afl_area_ptr, 0, MAP_SIZE);
       afl_area_ptr[0] = 1;
       afl_prev_loc = 0;
-
-      if (afl_persistent_getenv_addr) afl_init_persistent_environ();
     }
     
     if (persistent_memory) collect_memory_snapshot();
@@ -924,6 +922,8 @@ void afl_persistent_loop(CPUArchState *env) {
       afl_save_regs(&saved_regs, env);
       
       if (afl_persistent_hook_ptr) {
+        if (afl_persistent_getenv_addr)
+          afl_init_persistent_environ();
       
         struct api_regs hook_regs = saved_regs;
         afl_persistent_hook_ptr(&hook_regs, guest_base, shared_buf,
