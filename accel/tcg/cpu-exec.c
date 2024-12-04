@@ -572,9 +572,9 @@ void afl_setup(void) {
 
     }
 
-    if (getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"))
+    if (getenv("AFL_QEMU_PERSISTENT_GETENV_ADDR"))
       afl_persistent_getenv_addr =
-          strtoll(getenv("AF_QEMU_PERSISTENT_GETENV_ADDR"), NULL, 0);
+          strtoll(getenv("AFL_QEMU_PERSISTENT_GETENV_ADDR"), NULL, 0);
 
 #endif
 
