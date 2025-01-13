@@ -118,6 +118,9 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
             }
             gen_helper_afl_entry_routine(cpu_env);
         } else if (db->pc_next == afl_persistent_getenv_addr) {
+            if (getenv("AFL_DEBUG")) {
+                printf("[AFL] DEBUG: generating getenv hook insn\n");
+            }
             gen_helper_afl_getenv_routine(cpu_env);
         }
 
