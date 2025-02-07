@@ -859,7 +859,7 @@ void afl_getenv(CPUArchState *env) {
         printf("[AFL] DEBUG: hooking getenv(\"%s\") = %s\n", (char *) AFL_G2H(env_var->name), (char *) AFL_G2H(env_var->value));
       }
       afl_setenv(env, env_var->value);
-      cpu_loop_exit_restore(env_cpu(env), GETPC());
+      cpu_loop_exit_noexc(env_cpu(env));
     }
   }
 }
