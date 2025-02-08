@@ -852,7 +852,9 @@ void afl_getenv(CPUArchState *env) {
   struct afl_persistent_env_var *env_var;
 
   env_key = afl_get_arg0(env);
-  printf("[AFL] DEBUG: getenv(\"%s\") invoked\n", (char *) AFL_G2H(env_key));
+  if (getenv("AFL_DEBUG")) {
+    printf("[AFL] DEBUG: getenv(\"%s\") invoked\n", (char *) AFL_G2H(env_key));
+  }
   QSLIST_FOREACH(env_var, &(afl_persistent_env.vars), link) {
     if (!strcmp(AFL_G2H(env_key), AFL_G2H(env_var->name))) {
       if (getenv("AFL_DEBUG")) {
@@ -865,7 +867,9 @@ void afl_getenv(CPUArchState *env) {
 }
 
 static void afl_persistent_environ_reset(void) {
-  printf("[AFL] DEBUG: clearing env vars\n");
+  if (getenv("AFL_DEBUG")) {
+    printf("[AFL] DEBUG: clearing env vars\n");
+  }
   afl_persistent_env.mem_ptr = afl_persistent_env.environ;
 
   struct afl_persistent_env_var *env_var;
@@ -879,7 +883,9 @@ void afl_persistent_setenv(const char *name, const char *value) {
   struct afl_persistent_env_var *env_var;
   size_t name_len, value_len;
 
-  printf("[AFL] DEBUG: setting env var %s=%s\n", name, value);
+  if (getenv("AFL_DEBUG")) {
+    printf("[AFL] DEBUG: setting env var %s=%s\n", name, value);
+  }
 
   name_len = strlen(name) + 1;
   value_len = strlen(value) + 1;
