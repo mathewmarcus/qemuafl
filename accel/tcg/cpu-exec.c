@@ -95,6 +95,7 @@ unsigned char persistent_exits;
 unsigned char persistent_save_gpr;
 unsigned char persistent_memory;
 int           persisent_retaddr_offset;
+unsigned char crash_exploration_mode;
 
 struct api_regs saved_regs;
 
@@ -353,6 +354,8 @@ void afl_setup(void) {
   }
   
   disable_caching = getenv("AFL_QEMU_DISABLE_CACHE") != NULL;
+
+  crash_exploration_mode = getenv("__AFL_CRASH_EXPLORATION_MODE") != NULL;
 
   if (getenv("___AFL_EINS_ZWEI_POLIZEI___")) {  // CmpLog forkserver
 
@@ -771,7 +774,11 @@ void afl_forkserver(CPUState *cpu) {
 
     if (WIFSTOPPED(status))
       child_stopped = 1;
-    else if (unlikely(first_run && is_persistent)) {
+    else if (unlikely(first_run && is_persistent && !crash_exploration_mode)) {
+      /*
+        In crash exploration (aka peruvian rabbit) mode the child should have crashed,
+        so we don't expect to see WIFSTOPPED,
+      */
 
       fprintf(stderr, "[AFL] ERROR: no persistent iteration executed\n");
       exit(12);  // Persistent is wrong
