@@ -213,6 +213,6 @@ struct ppc_regs {
 };
 
 
-void afl_persistent_setenv(const char *name, const char *value);
+void afl_persistent_setenv(const char *name, uint8_t *value, uint32_t value_len);
 
 #endif

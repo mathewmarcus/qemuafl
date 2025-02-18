@@ -886,18 +886,14 @@ static void afl_persistent_environ_reset(void) {
   }
 }
 
-void afl_persistent_setenv(const char *name, const char *value) {
+void afl_persistent_setenv(const char *name, uint8_t *value, uint32_t value_len) {
   struct afl_persistent_env_var *env_var;
-  size_t name_len, value_len;
-
-  if (getenv("AFL_DEBUG")) {
-    printf("[AFL] DEBUG: setting env var %s=%s\n", name, value);
-  }
+  uint32_t name_len, real_value_len = 0;
+  uint8_t *afl_environ;
 
   name_len = strlen(name) + 1;
-  value_len = strlen(value) + 1;
 
-  if ((afl_persistent_env.mem_ptr + name_len + value_len) - afl_persistent_env.environ > AFL_PERSISENT_ENVIRON_SIZE) {
+  if ((afl_persistent_env.mem_ptr + name_len + value_len + 1) - afl_persistent_env.environ > AFL_PERSISENT_ENVIRON_SIZE) {
     fprintf(stderr,
             "[AFL] ERROR: exceeded maximum fuzzing env var memory size of %i",
             AFL_PERSISENT_ENVIRON_SIZE);
@@ -910,9 +906,27 @@ void afl_persistent_setenv(const char *name, const char *value) {
   env_var->name = afl_persistent_env.mem_ptr;
   afl_persistent_env.mem_ptr += name_len;
 
-  strcpy(AFL_G2H(afl_persistent_env.mem_ptr), value);
+  afl_environ = AFL_G2H(afl_persistent_env.mem_ptr);
+  /*
+     This effectively strncpys the value. This is necessary because
+     * the value may contain null bytes, and env vars must be strings (no memcpy)
+     * the value may not be null-terminated (no strcpy)
+       * in this case, we need to null-terminate the value
+     * we need to calculate the "real" string length of the value (i.e. up to the first null byte)
+  */
+  while (real_value_len < value_len && value[real_value_len]) {
+    afl_environ[real_value_len] = value[real_value_len];
+    real_value_len++;
+  }
+  if (value[real_value_len])
+    afl_environ[++real_value_len] = '\0';
+
   env_var->value = afl_persistent_env.mem_ptr;
-  afl_persistent_env.mem_ptr += value_len;
+  afl_persistent_env.mem_ptr += real_value_len;
+
+  if (getenv("AFL_DEBUG")) {
+    printf("[AFL] DEBUG: setting env var %s=%s\n", name, (char *) AFL_G2H(env_var->value));
+  }
 
   QSLIST_INSERT_HEAD(&(afl_persistent_env.vars), env_var, link);
 }
