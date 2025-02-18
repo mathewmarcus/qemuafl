@@ -888,7 +888,7 @@ static void afl_persistent_environ_reset(void) {
 
 void afl_persistent_setenv(const char *name, uint8_t *value, uint32_t value_len) {
   struct afl_persistent_env_var *env_var;
-  uint32_t name_len, real_value_len = 0;
+  uint32_t name_len, real_value_len;
   uint8_t *afl_environ;
 
   name_len = strlen(name) + 1;
@@ -908,24 +908,25 @@ void afl_persistent_setenv(const char *name, uint8_t *value, uint32_t value_len)
 
   afl_environ = AFL_G2H(afl_persistent_env.mem_ptr);
   /*
-     This effectively strncpys the value. This is necessary because
+     This effectively strncpys the value,
+     the only difference is that the dest string is always null terminated,
+     even if there are no null bytes in value[:value_len]. Consequently, the
+     final env var value may be up to value_len + 1 bytes in length
+
+     This approach is necessary because
      * the value may contain null bytes, and env vars must be strings (no memcpy)
      * the value may not be null-terminated (no strcpy)
-       * in this case, we need to null-terminate the value
-     * we need to calculate the "real" string length of the value (i.e. up to the first null byte)
+     * we need to calculate the "real" string length of the value (i.e. up to and including the first null byte)
   */
-  while (real_value_len < value_len && value[real_value_len]) {
+  for (real_value_len = 0; real_value_len < value_len && value[real_value_len] != '\0'; real_value_len++)
     afl_environ[real_value_len] = value[real_value_len];
-    real_value_len++;
-  }
-  if (value[real_value_len])
-    afl_environ[++real_value_len] = '\0';
+  afl_environ[real_value_len++] = '\0';
 
   env_var->value = afl_persistent_env.mem_ptr;
   afl_persistent_env.mem_ptr += real_value_len;
 
   if (getenv("AFL_DEBUG")) {
-    printf("[AFL] DEBUG: setting env var %s=%s\n", name, (char *) AFL_G2H(env_var->value));
+    printf("[AFL] DEBUG: setting env var %s=%s name_len=%u value_len=%u str_value_len=%u)\n", name, (char *) AFL_G2H(env_var->value), name_len, value_len, real_value_len);
   }
 
   QSLIST_INSERT_HEAD(&(afl_persistent_env.vars), env_var, link);
